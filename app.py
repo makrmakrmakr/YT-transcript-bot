@@ -30,3 +30,21 @@ def get_publish_date(video_id):
     except Exception:
         return "Unknown date"
 
+@app.route("/batch-transcripts", methods=["POST"])
+def batch_transcripts():
+    data = request.get_json()
+    video_urls = data.get("video_urls", [])
+
+    results = []
+    for url in video_urls:
+        # your logic here, like fetching transcript and extracting mentions
+        results.append({
+            "url": url,
+            "mentions_tree_care": True,
+            "quotes": [],
+            "video_title": "Example Video Title",
+            "date": "2025-04-15"
+        })
+
+    return jsonify(results)
+
