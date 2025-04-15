@@ -13,6 +13,12 @@ def extract_video_id(url):
         return parsed_url.path[1:]
     return None
 
+def format_time(seconds):
+    """Turns 134.5 seconds into '00:02:14' """
+    m, s = divmod(int(seconds), 60)
+    h, m = divmod(m, 60)
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
 @app.route('/')
 def home():
     return "I'm alive!"
@@ -21,6 +27,7 @@ def home():
 def batch_transcripts():
     data = request.get_json()
     video_urls = data.get('video_urls', [])
+    keywords = ['tree care', 'forestry']
     results = []
 
     for url in video_urls:
@@ -34,20 +41,33 @@ def batch_transcripts():
 
         try:
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            full_text = ' '.join([entry['text'] for entry in transcript])
-            mentions_tree_care = any(keyword in full_text.lower() for keyword in ['tree care', 'forestry'])
-            summary = 'Mentions found: tree care or forestry' if mentions_tree_care else 'No mentions found.'
+            full_text = ' '.join([entry['text'] for entry in transcript]).lower()
+            mentions_tree_care = any(keyword in full_text for keyword in keywords)
+
+            # Find all matching lines with timestamps
+            quotes = []
+            for entry in transcript:
+                line = entry['text'].lower()
+                if any(keyword in line for keyword in keywords):
+                    quotes.append({
+                        "time": format_time(entry['start']),
+                        "text": entry['text']
+                    })
+
+            summary = "Mentions found: tree care or forestry" if mentions_tree_care else "No mentions found."
             results.append({
                 'url': url,
-                'transcript': full_text,
                 'mentions_tree_care': mentions_tree_care,
+                'quotes': quotes,
                 'summary': summary
             })
+
         except (TranscriptsDisabled, NoTranscriptFound):
             results.append({
                 'url': url,
                 'transcript': None,
                 'mentions_tree_care': False,
+                'quotes': [],
                 'summary': 'Transcript not available.'
             })
         except Exception as e:
