@@ -26,4 +26,7 @@ def get_publish_date(video_id):
         url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
         response = requests.get(url)
         if response.status_code == 200:
-            return response.json().get("author_name", "Unknown date")  #_
+            return response.json().get("author_name", "Unknown date")
+    except Exception:
+        return "Unknown date"
+
