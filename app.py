@@ -36,14 +36,12 @@ def home():
 @app.route("/batch-transcripts", methods=["POST"])
 def batch_transcripts():
     try:
-        data = request.get_json(force=True)
-        if isinstance(data, str):
-            data = json.loads(data)
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = json.loads(request.get_data(as_text=True))
     except Exception as e:
-        print("❌ Failed to parse JSON:", str(e))
-        return jsonify({"error": "Invalid JSON received", "details": str(e)}), 400
-
-    print("📦 Parsed input data:", data)
+        return jsonify({"error": f"Failed to parse request body: {str(e)}"}), 400
 
     video_urls = data.get("video_urls", [])
     keywords = ['tree care', 'forestry']
@@ -59,4 +57,46 @@ def batch_transcripts():
             continue
 
         try:
-            transcript = YouTubeTranscriptApi.get_transcript(video_id
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            full_text = ' '.join([entry['text'] for entry in transcript]).lower()
+            mentions_tree_care = any(keyword in full_text for keyword in keywords)
+
+            quotes = []
+            for entry in transcript:
+                line = entry['text'].lower()
+                if any(keyword in line for keyword in keywords):
+                    quotes.append({
+                        "time": format_time(entry['start']),
+                        "text": entry['text']
+                    })
+
+            publish_date = get_publish_date(video_id)
+
+            results.append({
+                'url': url,
+                'published': publish_date,
+                'mentions_tree_care': mentions_tree_care,
+                'quotes': quotes,
+                'summary': "Mentions found: tree care or forestry" if mentions_tree_care else "No mentions found."
+            })
+
+        except (TranscriptsDisabled, NoTranscriptFound):
+            results.append({
+                'url': url,
+                'published': "Unknown",
+                'transcript': None,
+                'mentions_tree_care': False,
+                'quotes': [],
+                'summary': 'Transcript not available.'
+            })
+        except Exception as e:
+            results.append({
+                'url': url,
+                'published': "Unknown",
+                'error': str(e)
+            })
+
+    return jsonify(results)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
