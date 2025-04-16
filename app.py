@@ -48,3 +48,7 @@ def batch_transcripts():
 
     return jsonify(results)
 
+if __name__ == "__main__":
+    app.run()
+
+
