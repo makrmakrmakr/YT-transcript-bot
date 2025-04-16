@@ -34,10 +34,16 @@ def get_publish_date(video_id):
 def home():
     return "I'm alive!"
 
-@app.route('/batch-transcripts', methods=['POST'])
+@app.route("/batch-transcripts", methods=["POST"])
 def batch_transcripts():
-    data = request.get_json()
-    video_urls = data.get('video_urls', [])
+    import json
+    data = request.get_data(as_text=True)
+    try:
+        data = json.loads(data)
+    except json.JSONDecodeError:
+        return jsonify({"error": "Invalid JSON"}), 400
+
+    video_urls = data.get("video_urls", [])
     keywords = ['tree care', 'forestry']
     results = []
 
