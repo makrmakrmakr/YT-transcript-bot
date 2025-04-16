@@ -6,6 +6,8 @@ import requests
 
 app = Flask(__name__)
 
+
+
 def extract_video_id(url):
     parsed_url = urlparse(url)
     if parsed_url.hostname in ['www.youtube.com', 'youtube.com']:
@@ -49,6 +51,7 @@ def batch_transcripts():
     return jsonify(results)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0', port=8080)
+
 
 
