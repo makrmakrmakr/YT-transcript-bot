@@ -34,8 +34,8 @@ def get_publish_date(video_id):
 
 @app.route("/batch-transcripts", methods=["POST"])
 def batch_transcripts():
-    data = request.get_json()
-    video_urls = data.get("video_urls", [])
+    return jsonify({"status": "It worked!"})
+
 
     results = []
     for url in video_urls:
